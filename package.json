@@ -1,6 +1,6 @@
 {
   "name": "stacks",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A plugin for static side generator Nera to create reusable content.",
   "main": "index.js",
   "scripts": {
