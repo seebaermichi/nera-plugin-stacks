@@ -1,16 +1,56 @@
 {
-  "name": "stacks",
-  "version": "1.1.0",
-  "description": "A plugin for static side generator Nera to create reusable content.",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "“Michael <micha.becker79@gmail.com> (https://github.com/seebaermichi)",
-  "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/seebaermichi/nera-plugin-stacks"
-  }
+    "name": "@nera-static/plugin-stacks",
+    "version": "2.0.0",
+    "description": "A plugin for static side generator Nera to create reusable content.",
+    "main": "index.js",
+    "scripts": {
+        "publish-template": "node ./bin/publish-template.js",
+        "lint": "eslint .",
+        "test": "vitest"
+    },
+    "type": "module",
+    "exports": {
+        ".": "./index.js"
+    },
+    "bin": {
+        "nera-stacks": "./bin/publish-template.js"
+    },
+    "files": [
+        "bin",
+        "index.js",
+        "views"
+    ],
+    "keywords": [
+        "nera",
+        "plugin",
+        "stacks",
+        "static-site",
+        "mixin",
+        "template"
+    ],
+    "author": "Michael Becker",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/seebaermichi/nera-plugin-stacks.git"
+    },
+    "bugs": {
+        "url": "https://github.com/seebaermichi/nera-plugin-stacks/issues"
+    },
+    "homepage": "https://github.com/seebaermichi/nera-plugin-stacks#readme",
+    "dependencies": {
+        "pretty": "^2.0.0",
+        "@nera-static/plugin-utils": "^1.0.3"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "devDependencies": {
+        "cheerio": "^1.1.0",
+        "eslint": "^9.31.0",
+        "husky": "^9.1.7",
+        "pug": "^3.0.3",
+        "vitest": "^3.2.4"
+    },
+    "sideEffects": false
 }

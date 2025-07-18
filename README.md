@@ -1,72 +1,133 @@
-# Stacks - Nera plugin
-This is a plugin for the static side generator [Nera](https://github.com/seebaermichi/nera) to create content with 
-Markdown which can be reused on many different pages.
+# @nera-static/plugin-stacks
 
-## Usage
-At first, you need to place this plugin in the `src/plugins` folder of your Nera project.  
+A plugin for the [Nera](https://github.com/seebaermichi/nera) static site generator that allows you to define reusable content blocks (called "stacks") in Markdown. These blocks can be embedded into any page or layout — and optionally rendered using a custom template.
 
-Without any further configuration you can use stacks by just creating some Markdown files within the `pages` 
-directory of your Nera project. The meta section of these Markdown files must include at least the following:
+## ✨ Features
+
+-   Define reusable Markdown content anywhere in the `pages/` directory
+-   Access stack data globally in your views via `app.stacks`
+-   Use optional templates (`.pug`) to customize rendering per stack
+-   Includes a publishable default template to get started quickly
+-   Supports all frontmatter meta fields inside templates
+
+## 🚀 Installation
+
+Install the plugin in your Nera project:
+
+```bash
+npm install @nera-static/plugin-stacks
+```
+
+Nera will automatically detect the plugin, no additional setup or imports are required.
+
+## 📦 Usage
+
+Create a Markdown file inside `pages/`:
+
 ```markdown
 ---
 title: Some reusable content
 type: stack
 slug: some_reusable_content
 ---
+
 ### Reuse me
+
 This is content which can be reused easily on different pages.
-
-It can include any Markdown content.
 ```
-> Make sure to not include the layout property in the meta section, so that Nera doesn't compile this to a HTML file.
 
-Now you can use this stack in your template files, e.g. in a sidebar.
-```jade
-//- ...
+> ⚠️ Do **not** include a `layout` property in the frontmatter — stacks are not rendered to separate HTML files.
+
+You can now include it in your views:
+
+```pug
 aside
     h2 #{ app.stacks.some_reusable_content.meta.title }
     | !{ app.stacks.some_reusable_content.content }
-//- ...
 ```
-Whatever meta property is given in the Markdown file, can also be used in the view.
 
-### Using a template
-It is also possible to use a template for the stacks content. With a template you have more control about how the 
-content of the stack is rendered. To use this approach you of course need to provide a template. The meta section of 
-your stack should then look like this.
+All frontmatter fields (like `description`) are accessible via `app.stacks.<slug>.meta`.
+
+## 🧩 Stack Templates (Optional)
+
+You can render stacks using a custom Pug template:
+
 ```markdown
 ---
 title: Using a stack template
-description: A description which can also be used in the template for this stack.
+description: A custom description
 type: stack
 slug: stack_with_template
-# Provide the whole path to your stack template, could also be something like:
-# views/stacks/stack-layout.pug 
-# if you add it to the projects view directory
-stack_layout: src/plugins/stacks/views/stack-layout.pug
+stack_layout: views/stacks/stack-layout.pug
 ---
-### Reuse me
-This is content which can be reused easily on different pages. And it will use a given template to render it's content.
 
-It can include any Markdown content.
+### Reuse me
+
+This content will be rendered using the provided layout.
 ```
 
-The layout file for this stack can look like follows:
-```jade
+Example template (`views/stacks/stack-layout.pug`):
+
+```pug
 section.stack-wrapper
     header.stack-header
         h2 #{ stack.meta.title }
         p #{ stack.meta.description }
     article.stack-article
         | !{ stack.content }
-
 ```
 
-The usage in your page template will be the same as for the normal stack:
-```jade
-//- ...
+The usage in your views stays the same:
+
+```pug
 main
     | !{ app.stacks.stack_with_template.content }
-    | //- other content
-//- ...
 ```
+
+## 🛠️ Publish Default Template
+
+Use the default template provided by the plugin:
+
+```bash
+npx @nera-static/plugin-stacks run publish-template
+```
+
+This copies the template to:
+
+```
+views/vendor/plugin-stacks/stack-template.pug
+```
+
+You can then use it in your stack frontmatter like so:
+
+```yaml
+stack_layout: views/vendor/plugin-stacks/stack-template.pug
+```
+
+## 🧪 Development
+
+```bash
+npm install
+npm test
+```
+
+Tests are powered by [Vitest](https://vitest.dev) and cover:
+
+-   Loading and rendering of stack data
+-   Template rendering support
+-   Template publishing logic and file overwrite prevention
+
+## 🧑‍💻 Author
+
+Michael Becker  
+[https://github.com/seebaermichi](https://github.com/seebaermichi)
+
+## 🔗 Links
+
+-   [Plugin Repository](https://github.com/seebaermichi/nera-plugin-stacks)
+-   [NPM Package](https://www.npmjs.com/package/@nera-static/plugin-stacks)
+-   [Nera Static Site Generator](https://github.com/seebaermichi/nera)
+
+## 📄 License
+
+MIT

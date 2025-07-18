@@ -1,27 +1,49 @@
-module.exports = (() => {
-    const getAppData = data => {
-        data.app.stacks = {}
+import path from 'path'
+import fs from 'fs'
+import pug from 'pug'
+import pretty from 'pretty'
 
-        data.pagesData.filter(({ meta }) => meta.type ? meta.type === 'stack' : false)
-            .forEach(({ content, meta }) => {
-                if (meta.stack_layout) {
-                    const pug = require('pug')
-                    const pretty = require('pretty')
+export function getAppData(data) {
+    data.app.stacks = {}
 
-                    const fn = pug.compileFile(meta.stack_layout)
-                    content = fn(Object.assign({}, { stack: { meta, content } }))
-                    content = pretty(content)
+    data.pagesData
+        .filter(({ meta }) => meta.type === 'stack')
+        .forEach(({ content, meta }) => {
+            let renderedContent = content
+
+            if (meta.stack_layout) {
+                const layoutPath = path.resolve(
+                    process.cwd(),
+                    meta.stack_layout
+                )
+
+                if (fs.existsSync(layoutPath)) {
+                    const template = pug.compileFile(layoutPath)
+                    renderedContent = pretty(
+                        template({
+                            stack: {
+                                meta,
+                                content,
+                            },
+                        })
+                    )
+                } else {
+                    console.warn(
+                        `[Stacks Plugin] Stack layout not found: ${layoutPath}`
+                    )
                 }
+            }
 
-                const slug = meta.slug ? meta.slug : meta.title.toLowerCase().replace(/ /g, '_')
+            const slug =
+                meta.slug || meta.title?.toLowerCase().replace(/ /g, '_')
 
-                data.app.stacks[slug] = { content, meta }
-            })
+            if (slug) {
+                data.app.stacks[slug] = {
+                    content: renderedContent,
+                    meta,
+                }
+            }
+        })
 
-        return data.app
-    }
-
-    return {
-        getAppData
-    }
-})()
+    return data.app
+}
