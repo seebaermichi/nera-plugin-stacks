@@ -1,6 +1,6 @@
-section.stack-wrapper
-    header.stack-header
-        h2 #{ stack.meta.title }
-        p #{ stack.meta.description }
-    article.stack-article
+section.stack
+    header.stack__header
+        h2.stack__title #{ stack.meta.title }
+        p.stack__description #{ stack.meta.description }
+    article.stack__content
         | !{ stack.content }

@@ -3,10 +3,10 @@ import fs from 'fs'
 import pug from 'pug'
 import pretty from 'pretty'
 
-export function getAppData(data) {
-    data.app.stacks = {}
+function loadStacks(pagesData) {
+    const stacks = {}
 
-    data.pagesData
+    pagesData
         .filter(({ meta }) => meta.type === 'stack')
         .forEach(({ content, meta }) => {
             let renderedContent = content
@@ -38,12 +38,27 @@ export function getAppData(data) {
                 meta.slug || meta.title?.toLowerCase().replace(/ /g, '_')
 
             if (slug) {
-                data.app.stacks[slug] = {
+                stacks[slug] = {
                     content: renderedContent,
                     meta,
                 }
             }
         })
 
-    return data.app
+    return stacks
+}
+
+/**
+ * Returns modified app data with stacks.
+ * @param {object} param - Object containing app and pagesData
+ * @param {object} param.app - App data object
+ * @param {object[]} param.pagesData - Array of page data objects
+ * @returns {object} Modified app data with stacks
+ */
+export function getAppData({ app, pagesData }) {
+    const stacks = loadStacks(pagesData)
+    return {
+        ...app,
+        stacks,
+    }
 }

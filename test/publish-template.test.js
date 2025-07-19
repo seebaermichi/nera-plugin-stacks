@@ -46,7 +46,7 @@ describe('publish-template command', () => {
         expect(fs.existsSync(TEMPLATE_DEST)).toBe(true)
 
         const content = fs.readFileSync(TEMPLATE_DEST, 'utf-8')
-        expect(content).toMatch(/section.stack-wrapper/)
+        expect(content).toMatch(/section\.stack/)
     })
 
     it('skips if template already exists', () => {

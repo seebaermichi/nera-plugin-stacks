@@ -1,7 +1,7 @@
 {
     "name": "@nera-static/plugin-stacks",
-    "version": "2.0.0",
-    "description": "A plugin for static side generator Nera to create reusable content.",
+    "version": "2.1.0",
+    "description": "A plugin for Nera static site generator to create reusable content stacks with template-based rendering. Perfect for content components, widgets, and modular design systems.",
     "main": "index.js",
     "scripts": {
         "publish-template": "node ./bin/publish-template.js",
@@ -25,6 +25,12 @@
         "plugin",
         "stacks",
         "static-site",
+        "static-site-generator",
+        "content-stacks",
+        "reusable-content",
+        "template-rendering",
+        "content-components",
+        "modular-design",
         "mixin",
         "template"
     ],
@@ -40,7 +46,7 @@
     "homepage": "https://github.com/seebaermichi/nera-plugin-stacks#readme",
     "dependencies": {
         "pretty": "^2.0.0",
-        "@nera-static/plugin-utils": "^1.0.3"
+        "@nera-static/plugin-utils": "^1.1.0"
     },
     "engines": {
         "node": ">=18"

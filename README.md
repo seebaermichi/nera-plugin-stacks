@@ -9,6 +9,7 @@ A plugin for the [Nera](https://github.com/seebaermichi/nera) static site genera
 -   Use optional templates (`.pug`) to customize rendering per stack
 -   Includes a publishable default template to get started quickly
 -   Supports all frontmatter meta fields inside templates
+-   BEM CSS methodology for consistent styling
 
 ## 🚀 Installation
 
@@ -20,30 +21,27 @@ npm install @nera-static/plugin-stacks
 
 Nera will automatically detect the plugin, no additional setup or imports are required.
 
-## 📦 Usage
+## Usage
 
-Create a Markdown file inside `pages/`:
-
-```markdown
----
-title: Some reusable content
-type: stack
-slug: some_reusable_content
----
-
-### Reuse me
-
-This is content which can be reused easily on different pages.
-```
-
-> ⚠️ Do **not** include a `layout` property in the frontmatter — stacks are not rendered to separate HTML files.
-
-You can now include it in your views:
+After installation, stacks can be used in all templates via `app.stacks`:
 
 ```pug
-aside
-    h2 #{ app.stacks.some_reusable_content.meta.title }
-    | !{ app.stacks.some_reusable_content.content }
+// In any template
+div
+    // Basic stack without layout
+    != app.stacks.basic_stack.content
+
+    // Stack with custom template
+    != app.stacks.template_stack.content
+```
+
+**JavaScript/Template Access:**
+
+```javascript
+// Access a stack
+const stack = app.stacks.my_stack
+console.log(stack.content) // Rendered HTML
+console.log(stack.meta) // Original metadata
 ```
 
 All frontmatter fields (like `description`) are accessible via `app.stacks.<slug>.meta`.
@@ -109,6 +107,7 @@ stack_layout: views/vendor/plugin-stacks/stack-template.pug
 ```bash
 npm install
 npm test
+npm run lint
 ```
 
 Tests are powered by [Vitest](https://vitest.dev) and cover:
@@ -116,6 +115,26 @@ Tests are powered by [Vitest](https://vitest.dev) and cover:
 -   Loading and rendering of stack data
 -   Template rendering support
 -   Template publishing logic and file overwrite prevention
+
+### 🔄 Compatibility
+
+-   **Nera v4.1.0+**: Full compatibility with latest static site generator
+-   **Node.js 18+**: Modern JavaScript features and ES modules
+-   **Plugin Utils v1.1.0+**: Enhanced plugin utilities integration
+
+### 🏗️ Architecture
+
+This plugin uses the `getAppData()` function to process page data and make stacks available via `app.stacks`. Stacks are identified by their slug and can be rendered using custom templates.
+
+### 🎨 BEM CSS Classes
+
+The default template uses BEM (Block Element Modifier) methodology:
+
+-   `.stack` - Main stack container
+-   `.stack__header` - Stack header section
+-   `.stack__title` - Stack title element
+-   `.stack__description` - Stack description element
+-   `.stack__content` - Stack content area
 
 ## 🧑‍💻 Author
 
@@ -127,6 +146,7 @@ Michael Becker
 -   [Plugin Repository](https://github.com/seebaermichi/nera-plugin-stacks)
 -   [NPM Package](https://www.npmjs.com/package/@nera-static/plugin-stacks)
 -   [Nera Static Site Generator](https://github.com/seebaermichi/nera)
+-   [Plugin Documentation](https://github.com/seebaermichi/nera#plugins)
 
 ## 📄 License
 
