@@ -56,6 +56,21 @@ stack_layout: views/stacks/stack-layout.pug
 This will be rendered with a layout.
 ```
 
+### Stack keys
+
+Each stack is exposed as `app.stacks.<slug>`. The `slug` comes from frontmatter
+when present; otherwise it is derived from the title by lowercasing it and
+replacing spaces with **underscores** — `title: My Great Stack` becomes
+`app.stacks.my_great_stack`.
+
+This is a data-contract key you reference from your own layouts, not an HTML
+anchor, so the underscore convention is deliberate and will not change. Set an
+explicit `slug` if you want something else.
+
+If a `stack_layout` is missing or fails to compile, the plugin warns with the
+offending path and falls back to the stack's unrendered content rather than
+failing the build.
+
 ### Example layout template
 
 ```pug
@@ -72,7 +87,14 @@ section.stack
 Publish the default template:
 
 ```bash
-npx @nera-static/plugin-stacks run publish-template
+npx nera-stacks
+```
+
+Publishing **skips a template that already exists**, so your edits are safe. To
+pull in a newer version and discard your local changes:
+
+```bash
+npx nera-stacks --force
 ```
 
 This copies the layout to:

@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-07-20
+
+### Fixed
+
+-   **`pug` is now declared as a runtime dependency.** It sat in
+    `devDependencies` while `index.js` imports it at the top level, so in a
+    project that did not happen to hoist pug the **entire plugin failed to
+    load** — not just pages using `stack_layout`. Verified from a clean-room
+    tarball install: `ERR_MODULE_NOT_FOUND: pug`. Declared at `^3.0.2` to match
+    the generator's own range and avoid a duplicate pug install
+-   a `stack_layout` that exists but fails to compile — a pug syntax error, an
+    unresolvable include — no longer throws a raw pug error and kill the build.
+    It warns with the offending path and falls back to the stack's unrendered
+    content, matching what the missing-layout branch already did
+-   a missing or non-array `pagesData` returns empty stacks instead of throwing
+    `Cannot read properties of undefined (reading 'filter')`
+-   a page with no `meta` no longer throws
+
+### Added
+
+-   `--force` flag on `nera-stacks`, to re-publish the template over an existing
+    `views/vendor/plugin-stacks/` and discard local edits. Without it,
+    publishing still skips
+-   the README now documents the stack key convention: `app.stacks.<slug>`,
+    where an absent `slug` is derived from the title with **underscores**
+
+### Changed
+
+-   `@nera-static/plugin-utils` raised to `^1.2.0`
+-   CI runs Node 20 and 22 with `fail-fast: false`. The Node 18 leg failed on
+    `main` regardless of any source change, because the dev-only `cheerio`
+    dependency needs a global `File`. `engines` stays `>=18`: consumers never
+    install devDependencies, and this plugin's own runtime deps work there
+-   `CHANGELOG.md` is now included in the published package
+
+### Migration Guide
+
+Backward-compatible with v2.1.0.
+
+The slug convention was reviewed and **deliberately left alone**. Hyphenating it
+to match `nera-plugin-tags` would have moved every auto-generated stack from
+`app.stacks.my_stack` to `app.stacks.my-stack`, silently breaking any layout
+referencing one. It is now pinned by a regression test and documented.
+
 ## [2.1.0] - 2025-07-19
 
 ### Added
