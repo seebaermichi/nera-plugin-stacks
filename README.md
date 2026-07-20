@@ -1,5 +1,8 @@
 # @nera-static/plugin-stacks
 
+[![Test](https://github.com/seebaermichi/nera-plugin-stacks/actions/workflows/test.yml/badge.svg)](https://github.com/seebaermichi/nera-plugin-stacks/actions/workflows/test.yml)
+[![npm version](https://img.shields.io/npm/v/@nera-static/plugin-stacks)](https://www.npmjs.com/package/@nera-static/plugin-stacks)
+
 A plugin for the [Nera](https://github.com/seebaermichi/nera) static site generator that allows you to define reusable content blocks ("stacks") in Markdown. These can be embedded in any page or layout and optionally rendered with a custom template.
 
 ## ✨ Features
