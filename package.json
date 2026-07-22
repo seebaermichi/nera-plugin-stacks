@@ -1,6 +1,6 @@
 {
     "name": "@nera-static/plugin-stacks",
-    "version": "2.3.0",
+    "version": "2.3.1",
     "description": "A plugin for Nera static site generator to create reusable content stacks with template-based rendering. Perfect for content components, widgets, and modular design systems.",
     "main": "index.js",
     "scripts": {

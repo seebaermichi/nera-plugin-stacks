@@ -5,6 +5,83 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-07-22
+
+Full README audit against the code, plus the crash it uncovered. Everything
+documented was verified by executing it — the hook against constructed page
+data, the publish script in a temp project, and the template rendered through
+the plugin's own `stack_layout` path.
+
+### Fixed
+
+-   **a non-string `title` no longer kills the build.** `meta.title?.toLowerCase()`
+    guarded `null`/`undefined` but not a wrong type, so a stack page with
+    `title: 2024`, `title: true`, or an unquoted `title: 2024-05-01` — which
+    YAML parses into a **Date** — threw an uncaught
+    `TypeError: meta.title?.toLowerCase is not a function` and produced no
+    output at all. Numbers and booleans are now coerced (`2024`, `true`);
+    a date, list or mapping is skipped with a named warning rather than
+    stringified, because `String(aDate)` would become the public
+    `app.stacks` key. Found by the fleet check during the
+    `plugin-statistics` 2.2.1 release
+-   **duplicate stack slugs now warn.** Two stacks resolving to the same slug
+    still collapse into one, last page in build order winning — but it used to
+    happen in total silence, and the symptom (a stack rendering the wrong
+    content) points nowhere near the cause
+-   the README claimed publishing "skips a template that already exists". The
+    check is on the **directory** — if `views/vendor/plugin-stacks/` exists, the
+    command copies nothing and still exits 0, even when the file inside it is
+    missing. Documented accurately, including the fact that **upgrading never
+    updates the published template** without `--force`
+-   **Node.js** in Compatibility said `>= 18`; the real floor has been
+    `>=20.0.0` since 2.3.0
+
+### Added
+
+-   a "What makes a page a stack" section: `type: stack` is now stated as a rule
+    rather than only shown in examples, together with the two non-obvious
+    consequences — omit `layout` unless you also want the stack published as its
+    own page, and stack pages remain visible to every other plugin, so they can
+    be counted, indexed or listed as ordinary content
+-   documentation of three slug behaviours that were silent: only spaces are
+    replaced (so `Hero: Big! Block` yields a key that dot access cannot reach),
+    an explicit `slug` is used verbatim, and slugs share one global namespace
+-   `## 📊 Generated Output` now gives the real shape of `app.stacks`
+    (`{ [slug]: { content, meta } }`) and the actual rendered markup, generated
+    from the shipped template and diffed against it, instead of a single
+    sentence
+-   `## 🤝 Contributing`, linking to the Nera contributing guide
+-   `**Plugin Utils**: ^1.2.0` in Compatibility, noting it backs the publish
+    command rather than the build-time hook
+-   a statement that the BEM class names are a public contract, and a note that
+    `.stack__description` renders even when the frontmatter has no
+    `description`, leaving an empty `<p>`
+
+### Changed
+
+-   Development uses `npx vitest run`; `npm test` is Vitest in watch mode and
+    never exits
+-   the Nera compatibility line names v4.1.0 as a baseline rather than an
+    unexplained requirement
+
+### Migration from v2.3.0
+
+Nothing to do for a site that builds today, and **no template markup changed** —
+you do not need to re-publish templates for this release.
+
+The slug rule is unchanged for every input that produced a slug before: strings
+lowercase with spaces to underscores, explicit slugs verbatim, punctuation and
+accents preserved. Verified across the full input matrix. The only pages whose
+outcome changes are ones that previously **crashed the build**:
+
+-   `title: 2024` or `title: true` — the stack is now included, keyed `2024` /
+    `true`.
+-   `title: 2024-05-01` (a Date), or a list/mapping title — the stack is now
+    skipped with a warning. Quote the value, or set an explicit `slug`, to
+    include it.
+
+If your build already succeeded, none of these applied to it.
+
 ## [2.3.0] - 2026-07-21
 
 ### Changed

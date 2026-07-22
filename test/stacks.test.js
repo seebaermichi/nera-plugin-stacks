@@ -133,6 +133,159 @@ describe('slug generation', () => {
 
         expect(result.stacks).toEqual({})
     })
+
+    it('replaces spaces only, preserving punctuation and accents', () => {
+        // Documented in the README: the key can therefore be one that dot
+        // access cannot reach, e.g. app.stacks['hero:_big!_block'].
+        const result = getAppData({
+            app: {},
+            pagesData: [
+                stackPage({ title: 'Hero: Big! Block' }),
+                stackPage({ title: 'Über uns' }),
+            ],
+        })
+
+        expect(Object.keys(result.stacks)).toEqual([
+            'hero:_big!_block',
+            'über_uns',
+        ])
+    })
+
+    it('uses an explicit slug verbatim, without normalising it', () => {
+        const result = getAppData({
+            app: {},
+            pagesData: [stackPage({ title: 'x', slug: 'my slug' })],
+        })
+
+        expect(Object.keys(result.stacks)).toEqual(['my slug'])
+    })
+})
+
+describe('non-string titles', () => {
+    // Frontmatter is YAML, so `title` is not necessarily a string. Calling
+    // .toLowerCase() on a Number, Boolean or Date threw an uncaught TypeError
+    // and killed the whole build.
+    it('coerces a numeric title instead of throwing', () => {
+        const result = getAppData({
+            app: {},
+            pagesData: [stackPage({ title: 2024 })],
+        })
+
+        expect(Object.keys(result.stacks)).toEqual(['2024'])
+    })
+
+    it('coerces a boolean title instead of throwing', () => {
+        const result = getAppData({
+            app: {},
+            pagesData: [stackPage({ title: true })],
+        })
+
+        expect(Object.keys(result.stacks)).toEqual(['true'])
+    })
+
+    it('warns and skips a Date title rather than minting a grotesque key', () => {
+        // An unquoted `title: 2024-05-01` is parsed into a Date by the YAML
+        // loader, so this is the easiest of the three to hit by accident.
+        // String(aDate) would become the public app.stacks key.
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+        const result = getAppData({
+            app: {},
+            pagesData: [stackPage({ title: new Date('2024-05-01') })],
+        })
+
+        expect(result.stacks).toEqual({})
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('title is a date')
+        )
+
+        warn.mockRestore()
+    })
+
+    it('warns and skips a mapping title', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+        const result = getAppData({
+            app: {},
+            pagesData: [stackPage({ title: { a: 1 } })],
+        })
+
+        expect(result.stacks).toEqual({})
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('title is an object')
+        )
+
+        warn.mockRestore()
+    })
+
+    it('still honours an explicit slug when the title is unusable', () => {
+        const result = getAppData({
+            app: {},
+            pagesData: [
+                stackPage({ title: new Date('2024-05-01'), slug: 'ok' }),
+            ],
+        })
+
+        expect(Object.keys(result.stacks)).toEqual(['ok'])
+    })
+
+    it('does not throw for any title type', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+        expect(() =>
+            getAppData({
+                app: {},
+                pagesData: [
+                    stackPage({ title: 2024 }),
+                    stackPage({ title: false }),
+                    stackPage({ title: new Date() }),
+                    stackPage({ title: { a: 1 } }),
+                    stackPage({ title: ['a'] }),
+                    stackPage({ title: null }),
+                ],
+            })
+        ).not.toThrow()
+
+        warn.mockRestore()
+    })
+})
+
+describe('duplicate slugs', () => {
+    it('keeps the last page and warns about the collision', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+        const result = getAppData({
+            app: {},
+            pagesData: [
+                stackPage({ title: 'Dup' }, '<p>FIRST</p>'),
+                stackPage({ title: 'Dup' }, '<p>SECOND</p>'),
+            ],
+        })
+
+        expect(Object.keys(result.stacks)).toEqual(['dup'])
+        expect(result.stacks.dup.content).toBe('<p>SECOND</p>')
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('Duplicate stack slug "dup"')
+        )
+
+        warn.mockRestore()
+    })
+
+    it('does not warn when slugs are distinct', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+        getAppData({
+            app: {},
+            pagesData: [
+                stackPage({ title: 'One' }),
+                stackPage({ title: 'Two' }),
+            ],
+        })
+
+        expect(warn).not.toHaveBeenCalled()
+
+        warn.mockRestore()
+    })
 })
 
 describe('malformed input', () => {
