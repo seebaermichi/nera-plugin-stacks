@@ -5,6 +5,8 @@
 
 A plugin for the [Nera](https://github.com/seebaermichi/nera) static site generator that allows you to define reusable content blocks ("stacks") in Markdown. These can be embedded in any page or layout and optionally rendered with a custom template.
 
+📖 **Documentation:** [nera.js.org](https://nera.js.org)
+
 ## ✨ Features
 
 - Define reusable Markdown blocks in the `pages/` directory
@@ -250,6 +252,7 @@ Michael Becker
 
 - [Plugin Repository](https://github.com/seebaermichi/nera-plugin-stacks)
 - [NPM Package](https://www.npmjs.com/package/@nera-static/plugin-stacks)
+- [Nera Website](https://nera.js.org)
 - [Nera Static Site Generator](https://github.com/seebaermichi/nera)
 
 ## 🧩 Compatibility
