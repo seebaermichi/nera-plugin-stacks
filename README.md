@@ -71,13 +71,18 @@ title: Stack with layout
 description: A reusable section
 slug: stack_with_template
 type: stack
-stack_layout: views/stacks/stack-layout.pug
+stack_layout: theme/views/stacks/stack-layout.pug
 ---
 
 ### Hello Stack
 
 This will be rendered with a layout.
 ```
+
+`stack_layout` is a file path resolved from your **project root** (where you run
+`nera build`), not from the views folder — so on a site scaffolded with
+`nera new`, whose views live in `theme/views/`, it starts with `theme/`. On an
+older site that renders from a root `views/` folder, drop the `theme/` prefix.
 
 ### Stack keys
 
@@ -134,11 +139,15 @@ npx nera-stacks
 This copies the layout to:
 
 ```
-views/vendor/plugin-stacks/stack-template.pug
+theme/views/vendor/plugin-stacks/stack-template.pug
 ```
 
+On an older site with a root `views/` folder and no `theme/`, it lands in
+`views/vendor/plugin-stacks/` instead — the command picks the destination
+automatically.
+
 > **Publishing skips the whole directory, not individual files.** If
-> `views/vendor/plugin-stacks/` already exists, the command copies **nothing**
+> `theme/views/vendor/plugin-stacks/` already exists, the command copies **nothing**
 > and still exits successfully — even if you deleted the file inside it. This
 > also means **upgrading the plugin never updates your published template.** To
 > pull in a newer version, re-run with `--force`:
@@ -150,10 +159,10 @@ views/vendor/plugin-stacks/stack-template.pug
 > `--force` overwrites every file in that directory and discards local edits, so
 > diff your copy first if you have customised it.
 
-Reference it in stack frontmatter:
+Reference it in stack frontmatter, by its path from the project root:
 
 ```yaml
-stack_layout: views/vendor/plugin-stacks/stack-template.pug
+stack_layout: theme/views/vendor/plugin-stacks/stack-template.pug
 ```
 
 ## 🎨 Styling
@@ -258,10 +267,13 @@ Michael Becker
 ## 🧩 Compatibility
 
 - **Nera**: v4.1.0+ — a baseline rather than a requirement; the plugin reads only
-  page frontmatter and uses no generator feature above the 4.x line.
+  page frontmatter and uses no generator feature above the 4.x line. The
+  `theme/` folder layout used in the paths above — what `nera new` scaffolds —
+  needs v4.6.0+.
 - **Node.js**: >= 20.0.0
 - **Plugin Utils**: `^1.2.0` — used by the `npx nera-stacks` publish command
-  (where `--force` landed), not by the plugin at build time.
+  (where `--force` landed), not by the plugin at build time. Publishing into
+  `theme/views/vendor/` needs 1.5.0+, which a fresh install resolves.
 - **Plugin API**: Uses `getAppData()` to expose stack data
 
 ## 📦 License

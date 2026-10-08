@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2] - 2026-10-08
+
+### Fixed
+
+-   The README now describes the `theme/` site layout that `nera new`
+    scaffolds. `stack_layout` is resolved from the project root, so the
+    documented `views/vendor/plugin-stacks/stack-template.pug` was a path that
+    does not exist on a scaffolded site and fell back to unrendered content
+    with a "Stack layout not found" warning. The examples now use
+    `theme/views/…`, the README says the path is relative to the project root,
+    and one note covers sites still on the root-`views/` layout
+
 ## [2.3.1] - 2026-07-22
 
 Full README audit against the code, plus the crash it uncovered. Everything
