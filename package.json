@@ -14,7 +14,7 @@
         ".": "./index.js"
     },
     "bin": {
-        "nera-stacks": "./bin/publish-template.js"
+        "nera-stacks": "bin/publish-template.js"
     },
     "files": [
         "bin",
@@ -40,7 +40,7 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/seebaermichi/nera-plugin-stacks.git"
+        "url": "git+https://github.com/seebaermichi/nera-plugin-stacks.git"
     },
     "bugs": {
         "url": "https://github.com/seebaermichi/nera-plugin-stacks/issues"
