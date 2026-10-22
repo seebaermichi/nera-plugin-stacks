@@ -47,7 +47,10 @@ Two consequences worth knowing, because neither is obvious:
 - **Give stack pages no `layout`.** Nera renders a page to `public/` only if its
   frontmatter has one, so omitting `layout` keeps the stack a reusable fragment
   rather than also publishing it as its own page. Add a `layout` only if you
-  genuinely want both.
+  genuinely want both. `nera validate` and `nera build --check`
+  (`@nera-static/validate` ≥ 1.6.1) know this: they do not warn `layout-missing`
+  for a page whose frontmatter sets `type: stack`, so it needs no `ignore:`
+  entry in `config/validate.yaml`.
 - **Stack pages are still ordinary pages.** They stay in the page list every
   other plugin sees, so they can be counted by `plugin-statistics`, indexed by
   `plugin-search`, or listed by a navigation plugin. Exclude them there if you
