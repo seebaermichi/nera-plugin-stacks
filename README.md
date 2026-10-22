@@ -11,6 +11,7 @@ A plugin for the [Nera](https://github.com/seebaermichi/nera) static site genera
 
 - Define reusable Markdown blocks in the `pages/` directory
 - Access all stacks via `app.stacks` in any view
+- Group stacks into ordered, per-language lists via `app.stackGroups` / `app.stackGroupsByLang`
 - Optional Pug templates for customized stack rendering
 - Frontmatter meta fields fully available in templates
 - Publishable default template for quick integration
@@ -117,6 +118,59 @@ If a `stack_layout` is missing or fails to compile, the plugin warns with the
 offending path and falls back to the stack's unrendered content rather than
 failing the build.
 
+### Stack groups
+
+Some sections are a *list* of blocks rather than one: the feature grid on a
+homepage, a row of testimonials, a pricing table. Give each block its own stack
+page and put them in the same **`stack_group`**; **`stack_order`** sets their
+order:
+
+```markdown
+---
+type: stack
+stack_group: home_features
+stack_order: 1
+lang: en
+title: Markdown in, HTML out
+---
+Author content in Markdown. Inline `code` and [links](/docs/) work as usual.
+```
+
+The plugin then writes two more keys:
+
+- **`app.stackGroups[<group>]`** — every stack in the group, ordered.
+- **`app.stackGroupsByLang[<group>][<lang>]`** — the same, split by language. A
+  stack without `lang` belongs to the site's default language (`app.lang` from
+  `config/app.yaml`), or to `default` when the site sets none.
+
+Each entry has the same `{ content, meta }` shape as an `app.stacks` entry, so a
+template loops over it directly:
+
+```pug
+- const features = app.stackGroupsByLang.home_features?.[meta.lang || app.lang] || []
+each feature, i in features
+  .feature
+    h2.feature__title #{ feature.meta.title }
+    .feature__body!= feature.content
+```
+
+On a single-language site, `each feature in app.stackGroups.home_features || []`
+is enough.
+
+Rules worth knowing:
+
+- **Order.** Stacks with a numeric `stack_order` come first, ascending; stacks
+  without one follow in build order, as do ties. A `stack_order` that is not a
+  number is ignored with a warning.
+- **Grouped stacks stay out of `app.stacks`** unless they set an explicit
+  `slug` — they are addressed through their group, and the same section in
+  three languages would otherwise produce colliding title-derived keys. For the
+  same reason a grouped stack needs neither a `slug` nor a `title`.
+- **The group name is used verbatim** as the key, like an explicit `slug`. Use
+  an identifier (`home_features`) if you want dot access. A `stack_group` that is
+  not a string is ignored with a warning, and the stack is treated as ungrouped.
+- `stack_layout` works on grouped stacks exactly as on single ones.
+
 ### Example layout template
 
 ```pug
@@ -202,6 +256,16 @@ app.stacks = {
 }
 ```
 
+Grouped stacks (see [Stack groups](#stack-groups)) add two keys holding the
+same entries, ordered:
+
+```js
+app.stackGroups = { home_features: [ { content, meta }, … ] }
+app.stackGroupsByLang = { home_features: { en: [ … ], de: [ … ] } }
+```
+
+Both are `{}` when no stack sets a `stack_group`.
+
 Rendering a stack through the shipped template produces:
 
 ```html
@@ -233,6 +297,7 @@ for a single pass.
 Tests use [Vitest](https://vitest.dev) and cover:
 
 - Stack discovery and rendering
+- Stack groups: ordering and per-language split
 - Layout integration
 - Template publishing and overwrite handling
 
@@ -275,6 +340,7 @@ Michael Becker
   (where `--force` landed), not by the plugin at build time. Publishing into
   `theme/views/vendor/` needs 1.5.0+, which a fresh install resolves.
 - **Plugin API**: Uses `getAppData()` to expose stack data
+- **Stack groups**: since 2.4.0
 
 ## 📦 License
 

@@ -57,49 +57,120 @@ function getStackSlug(meta) {
     return undefined
 }
 
-function loadStacks(pagesData) {
+function renderStack({ content, meta }) {
+    if (!meta.stack_layout) {
+        return content
+    }
+
+    const layoutPath = path.resolve(process.cwd(), meta.stack_layout)
+
+    if (!fs.existsSync(layoutPath)) {
+        console.warn(`[Stacks Plugin] Stack layout not found: ${layoutPath}`)
+
+        return content
+    }
+
+    // A layout that exists can still fail to compile — a pug syntax error, or
+    // an include that cannot be resolved. One bad layout should not take the
+    // whole build down, so warn with the offending path and fall back to the
+    // unrendered content, matching the not-found branch above.
+    try {
+        const template = pug.compileFile(layoutPath)
+
+        return pretty(template({ stack: { meta, content } }))
+    } catch (error) {
+        console.warn(
+            `[Stacks Plugin] Failed to render stack layout ${layoutPath}: ${error.message}`
+        )
+
+        return content
+    }
+}
+
+/**
+ * Reads `stack_group`. Anything but a non-empty string is ignored with a
+ * warning, and the stack is then treated as an ordinary, ungrouped one — a
+ * group name is a key users reference from their layouts, so `String()`ing a
+ * list or a date into one would mint public API nobody asked for.
+ */
+function getStackGroup(meta) {
+    const group = meta.stack_group
+
+    if (group == null || group === '') {
+        return undefined
+    }
+
+    if (typeof group === 'string') {
+        return group
+    }
+
+    console.warn(
+        `[Stacks Plugin] Ignoring a non-string \`stack_group\` on stack "${meta.slug || meta.title || meta.href}" — use a plain string.`
+    )
+
+    return undefined
+}
+
+/**
+ * Reads `stack_order`. Only finite numbers count; anything else is warned
+ * about (when set) and sorts like a missing order.
+ */
+function getStackOrder(meta) {
+    const order = meta.stack_order
+
+    if (order == null) {
+        return undefined
+    }
+
+    if (typeof order === 'number' && Number.isFinite(order)) {
+        return order
+    }
+
+    console.warn(
+        `[Stacks Plugin] Ignoring a non-numeric \`stack_order\` on stack "${meta.slug || meta.title || meta.href}".`
+    )
+
+    return undefined
+}
+
+/**
+ * Stacks with a `stack_order` first, ascending; the rest after them. Array
+ * sort is stable, so ties and unordered stacks keep build order.
+ */
+function byStackOrder(a, b) {
+    const orderA = a.order ?? Infinity
+    const orderB = b.order ?? Infinity
+
+    if (orderA === orderB) {
+        return 0
+    }
+
+    return orderA < orderB ? -1 : 1
+}
+
+function loadStacks(pagesData, defaultLang) {
     const stacks = {}
+    const grouped = {}
 
     pagesData
         .filter(({ meta }) => meta?.type === 'stack')
         .forEach(({ content, meta }) => {
-            let renderedContent = content
+            const stack = {
+                content: renderStack({ content, meta }),
+                meta,
+            }
+            const group = getStackGroup(meta)
 
-            if (meta.stack_layout) {
-                const layoutPath = path.resolve(
-                    process.cwd(),
-                    meta.stack_layout
-                )
-
-                if (fs.existsSync(layoutPath)) {
-                    // A layout that exists can still fail to compile — a pug
-                    // syntax error, or an include that cannot be resolved.
-                    // One bad layout should not take the whole build down, so
-                    // warn with the offending path and fall back to the
-                    // unrendered content, matching the not-found branch below.
-                    try {
-                        const template = pug.compileFile(layoutPath)
-                        renderedContent = pretty(
-                            template({
-                                stack: {
-                                    meta,
-                                    content,
-                                },
-                            })
-                        )
-                    } catch (error) {
-                        console.warn(
-                            `[Stacks Plugin] Failed to render stack layout ${layoutPath}: ${error.message}`
-                        )
-                    }
-                } else {
-                    console.warn(
-                        `[Stacks Plugin] Stack layout not found: ${layoutPath}`
-                    )
-                }
+            if (group) {
+                grouped[group] = grouped[group] || []
+                grouped[group].push({ stack, order: getStackOrder(meta) })
             }
 
-            const slug = getStackSlug(meta)
+            // A grouped stack is addressed through its group, so it only
+            // enters `app.stacks` when it asks to with an explicit slug. A
+            // group usually holds the same section in several languages, and
+            // deriving keys from those titles would collide and warn.
+            const slug = group ? meta.slug : getStackSlug(meta)
 
             if (slug) {
                 // Slugs are a single global namespace, so two stacks titled
@@ -113,14 +184,30 @@ function loadStacks(pagesData) {
                     )
                 }
 
-                stacks[slug] = {
-                    content: renderedContent,
-                    meta,
-                }
+                stacks[slug] = stack
             }
         })
 
-    return stacks
+    const stackGroups = {}
+    const stackGroupsByLang = {}
+
+    Object.entries(grouped).forEach(([group, entries]) => {
+        const ordered = [...entries].sort(byStackOrder).map(({ stack }) => stack)
+
+        stackGroups[group] = ordered
+        stackGroupsByLang[group] = {}
+
+        ordered.forEach((stack) => {
+            // Same rule as plugin-tags: a page without `lang` belongs to the
+            // site's default language.
+            const lang = stack.meta.lang || defaultLang || 'default'
+
+            stackGroupsByLang[group][lang] = stackGroupsByLang[group][lang] || []
+            stackGroupsByLang[group][lang].push(stack)
+        })
+    })
+
+    return { stacks, stackGroups, stackGroupsByLang }
 }
 
 /**
@@ -128,15 +215,19 @@ function loadStacks(pagesData) {
  * @param {object} param - Object containing app and pagesData
  * @param {object} param.app - App data object
  * @param {object[]} param.pagesData - Array of page data objects
- * @returns {object} Modified app data with stacks
+ * @returns {object} Modified app data with stacks and stack groups
  */
 export function getAppData({ app, pagesData } = {}) {
     // Same guard as page-pagination:54 and page-navigation:41. Without it a
     // missing pagesData surfaced as `Cannot read properties of undefined`.
-    const stacks = Array.isArray(pagesData) ? loadStacks(pagesData) : {}
+    const { stacks, stackGroups, stackGroupsByLang } = Array.isArray(pagesData)
+        ? loadStacks(pagesData, app?.lang)
+        : { stacks: {}, stackGroups: {}, stackGroupsByLang: {} }
 
     return {
         ...app,
         stacks,
+        stackGroups,
+        stackGroupsByLang,
     }
 }

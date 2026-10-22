@@ -293,6 +293,8 @@ describe('malformed input', () => {
         expect(getAppData({ app: { title: 'x' } })).toEqual({
             title: 'x',
             stacks: {},
+            stackGroups: {},
+            stackGroupsByLang: {},
         })
     })
 
@@ -301,7 +303,11 @@ describe('malformed input', () => {
     })
 
     it('tolerates being called with no argument at all', () => {
-        expect(getAppData()).toEqual({ stacks: {} })
+        expect(getAppData()).toEqual({
+            stacks: {},
+            stackGroups: {},
+            stackGroupsByLang: {},
+        })
     })
 
     it('tolerates a page with no meta', () => {
@@ -349,6 +355,171 @@ describe('malformed input', () => {
         expect(result.stacks.broken.content).toBe('<p>fallback</p>')
         expect(warn.mock.calls[0][0]).toContain('Failed to render stack layout')
         expect(warn.mock.calls[0][0]).toContain('views/broken.pug')
+
+        warn.mockRestore()
+    })
+})
+
+describe('stack groups', () => {
+    const titles = (stacks) => stacks.map(({ meta }) => meta.title)
+
+    it('collects grouped stacks into app.stackGroups', () => {
+        const result = getAppData({
+            app: {},
+            pagesData: [
+                stackPage({ title: 'A', stack_group: 'features' }),
+                stackPage({ title: 'Plain' }),
+                stackPage({ title: 'B', stack_group: 'features' }),
+            ],
+        })
+
+        expect(titles(result.stackGroups.features)).toEqual(['A', 'B'])
+        expect(Object.keys(result.stackGroups)).toEqual(['features'])
+    })
+
+    it('exposes each stack with its rendered content and meta', () => {
+        const result = getAppData({
+            app: {},
+            pagesData: [
+                stackPage(
+                    { title: 'A', stack_group: 'features', custom: 1 },
+                    '<p>A body</p>'
+                ),
+            ],
+        })
+
+        const [stack] = result.stackGroups.features
+
+        expect(stack.content).toBe('<p>A body</p>')
+        expect(stack.meta.custom).toBe(1)
+    })
+
+    it('sorts by stack_order, then unordered stacks in build order', () => {
+        const result = getAppData({
+            app: {},
+            pagesData: [
+                stackPage({ title: 'Unordered 1', stack_group: 'g' }),
+                stackPage({ title: 'Third', stack_group: 'g', stack_order: 3 }),
+                stackPage({ title: 'Unordered 2', stack_group: 'g' }),
+                stackPage({ title: 'First', stack_group: 'g', stack_order: 1 }),
+                stackPage({ title: 'Tie A', stack_group: 'g', stack_order: 2 }),
+                stackPage({ title: 'Tie B', stack_group: 'g', stack_order: 2 }),
+            ],
+        })
+
+        expect(titles(result.stackGroups.g)).toEqual([
+            'First',
+            'Tie A',
+            'Tie B',
+            'Third',
+            'Unordered 1',
+            'Unordered 2',
+        ])
+    })
+
+    it('splits each group by language, defaulting to app.lang', () => {
+        const result = getAppData({
+            app: { lang: 'en' },
+            pagesData: [
+                stackPage({ title: 'DE 2', stack_group: 'g', lang: 'de', stack_order: 2 }),
+                stackPage({ title: 'EN 1', stack_group: 'g', stack_order: 1 }),
+                stackPage({ title: 'DE 1', stack_group: 'g', lang: 'de', stack_order: 1 }),
+                stackPage({ title: 'EN 2', stack_group: 'g', lang: 'en', stack_order: 2 }),
+            ],
+        })
+
+        expect(titles(result.stackGroupsByLang.g.en)).toEqual(['EN 1', 'EN 2'])
+        expect(titles(result.stackGroupsByLang.g.de)).toEqual(['DE 1', 'DE 2'])
+        expect(result.stackGroups.g).toHaveLength(4)
+    })
+
+    it('files stacks under "default" when neither page nor site set a language', () => {
+        const result = getAppData({
+            app: {},
+            pagesData: [stackPage({ title: 'A', stack_group: 'g' })],
+        })
+
+        expect(titles(result.stackGroupsByLang.g.default)).toEqual(['A'])
+    })
+
+    it('keeps a grouped stack out of app.stacks unless it sets an explicit slug', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+        const result = getAppData({
+            app: {},
+            pagesData: [
+                stackPage({ title: 'Same', stack_group: 'g', lang: 'en' }),
+                stackPage({ title: 'Same', stack_group: 'g', lang: 'de' }),
+                stackPage({ title: 'Named', slug: 'named', stack_group: 'g' }),
+            ],
+        })
+
+        expect(Object.keys(result.stacks)).toEqual(['named'])
+        expect(result.stacks.named).toBe(result.stackGroups.g[2])
+        expect(warn).not.toHaveBeenCalled()
+
+        warn.mockRestore()
+    })
+
+    it('needs neither slug nor title on a grouped stack', () => {
+        const result = getAppData({
+            app: {},
+            pagesData: [stackPage({ stack_group: 'g' }, '<p>anonymous</p>')],
+        })
+
+        expect(result.stackGroups.g[0].content).toBe('<p>anonymous</p>')
+    })
+
+    it('renders grouped stacks through their stack_layout', () => {
+        const result = getAppData({
+            app: {},
+            pagesData: [
+                stackPage({
+                    title: 'Laid out',
+                    description: 'D',
+                    stack_group: 'g',
+                    stack_layout: 'views/stack-template.pug',
+                }),
+            ],
+        })
+
+        expect(result.stackGroups.g[0].content).toContain(
+            '<h2 class="stack__title">Laid out</h2>'
+        )
+    })
+
+    it('warns about and ignores a non-string stack_group', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+        const result = getAppData({
+            app: {},
+            pagesData: [stackPage({ title: 'Listy', stack_group: ['a'] })],
+        })
+
+        expect(result.stackGroups).toEqual({})
+        expect(result.stacks.listy).toBeDefined()
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('non-string `stack_group`')
+        )
+
+        warn.mockRestore()
+    })
+
+    it('warns about a non-numeric stack_order and sorts it last', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+        const result = getAppData({
+            app: {},
+            pagesData: [
+                stackPage({ title: 'Wordy', stack_group: 'g', stack_order: 'one' }),
+                stackPage({ title: 'Numbered', stack_group: 'g', stack_order: 5 }),
+            ],
+        })
+
+        expect(titles(result.stackGroups.g)).toEqual(['Numbered', 'Wordy'])
+        expect(warn).toHaveBeenCalledWith(
+            expect.stringContaining('non-numeric `stack_order`')
+        )
 
         warn.mockRestore()
     })

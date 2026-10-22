@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-10-22
+
+### Added
+
+-   **Stack groups.** A stack page with `stack_group: <name>` joins an ordered
+    list, so a section made of several blocks — a feature grid, testimonials —
+    can be authored as one Markdown file per block. `app.stackGroups[<name>]`
+    holds the group, ordered by `stack_order` (numeric, ascending; stacks
+    without one follow in build order), and `app.stackGroupsByLang[<name>][<lang>]`
+    splits it by `meta.lang`, defaulting to `app.lang`. Entries have the same
+    `{ content, meta }` shape as `app.stacks`. A grouped stack enters
+    `app.stacks` only with an explicit `slug`, so the same block in several
+    languages does not produce colliding title-derived keys. A non-string
+    `stack_group` or a non-numeric `stack_order` is ignored with a warning.
+    Existing stacks are unaffected; both new keys are `{}` when no stack is
+    grouped
+
 ## [2.3.2] - 2026-10-08
 
 ### Fixed
