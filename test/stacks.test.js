@@ -81,6 +81,65 @@ describe('Stacks plugin', () => {
         expect(stackHtml).toContain('<h3>Stack with template</h3>')
     })
 
+    // Pins the formatter's exact output, so swapping or upgrading it cannot
+    // change `app.stacks[slug].content` unnoticed. The fixture puts extra
+    // whitespace inside every tag the formatter leaves unformatted (`em`,
+    // `strong`, `span`, `code`, `pre`) — where formatting them would collapse
+    // or re-indent it — and nests block elements to pin the indentation. The
+    // expected string is the recorded output of 2.4.0, not computed here.
+    it('formats a stack rendered through a layout exactly', () => {
+        const content = [
+            '<div class="intro"><h3>Pinned output</h3>',
+            '<ul><li>An <em>emphasised\n      word</em></li><li>A <strong>bold   phrase</strong></li></ul>',
+            '<p>A <span class="note"><b>note</b>   here</span> and <code>nera  \n  build</code></p>',
+            '<pre><code class="language-js">const a = 1\n    const b = 2\n</code></pre></div>',
+            '<blockquote><p>Nested <em>block</em></p></blockquote>',
+        ].join('')
+
+        const result = getAppData({
+            app: {},
+            pagesData: [
+                stackPage(
+                    {
+                        title: 'Pinned',
+                        description: 'Exact output',
+                        slug: 'pinned',
+                        stack_layout: 'views/stack-template.pug',
+                    },
+                    content
+                ),
+            ],
+        })
+
+        expect(result.stacks.pinned.content).toBe(
+            [
+                '<section class="stack">',
+                '  <header class="stack__header">',
+                '    <h2 class="stack__title">Pinned</h2>',
+                '    <p class="stack__description">Exact output</p>',
+                '  </header>',
+                '  <article class="stack__content">',
+                '    <div class="intro">',
+                '      <h3>Pinned output</h3>',
+                '      <ul>',
+                '        <li>An <em>emphasised',
+                '      word</em></li>',
+                '        <li>A <strong>bold   phrase</strong></li>',
+                '      </ul>',
+                '      <p>A <span class="note"><b>note</b>   here</span> and <code>nera  ',
+                '  build</code></p><pre><code class="language-js">const a = 1',
+                '    const b = 2',
+                '</code></pre>',
+                '    </div>',
+                '    <blockquote>',
+                '      <p>Nested <em>block</em></p>',
+                '    </blockquote>',
+                '  </article>',
+                '</section>',
+            ].join('\n')
+        )
+    })
+
     it('preserves other app properties', () => {
         const result = getAppData({
             app: { title: 'Test App', lang: 'en' },
