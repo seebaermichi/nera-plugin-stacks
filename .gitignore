@@ -10,3 +10,7 @@ plans/
 /.mcp.json
 /ROADMAP*.md
 /DESIGN-BRIEF.md
+.claude/.work-issue-active
+
+# Environment files (Snagio token)
+.env
