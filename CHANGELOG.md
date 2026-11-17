@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2026-11-17
+
+### Changed
+
+-   A stack rendered through its `stack_layout` is formatted with
+    `js-beautify` 2 directly instead of through `pretty`, with the same
+    options, so `app.stacks`, `app.stackGroups` and `app.stackGroupsByLang`
+    hold byte for byte the same `content` as before. `pretty` pinned
+    `js-beautify` 1, whose `glob@10` printed `npm warn deprecated glob@10.5.0`
+    on every install of a site that uses stacks, and the site now resolves the
+    same `js-beautify` 2 as `@nera-static/core` 4.16.1+ instead of a second
+    copy. On Node 20 and on Node 22 before 22.22.2, `npm install` prints
+    `npm warn EBADENGINE` for `nopt` and `abbrev` instead: only js-beautify's
+    command-line tool uses them, never the plugin, so it renders the same on
+    every supported Node. The moderate `npm audit` findings for `glob` and
+    `minimatch` remain, because `js-beautify` 2 still depends on affected
+    versions
+
 ## [2.4.0] - 2026-10-22
 
 ### Added

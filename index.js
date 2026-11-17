@@ -1,7 +1,18 @@
 import path from 'path'
 import fs from 'fs'
 import pug from 'pug'
-import pretty from 'pretty'
+import beautify from 'js-beautify'
+
+// The defaults of the `pretty` package, which this plugin used up to 2.4.0:
+// calling js-beautify 2 directly keeps the output and drops the deprecated
+// `glob@10` that `pretty` pulled in through js-beautify 1. Core made the same
+// swap in 4.16.1.
+const HTML_FORMAT = {
+    unformatted: ['code', 'pre', 'em', 'strong', 'span'],
+    indent_inner_html: true,
+    indent_char: ' ',
+    indent_size: 2,
+}
 
 /**
  * Derives the `app.stacks` key for one stack page.
@@ -77,7 +88,7 @@ function renderStack({ content, meta }) {
     try {
         const template = pug.compileFile(layoutPath)
 
-        return pretty(template({ stack: { meta, content } }))
+        return beautify.html(template({ stack: { meta, content } }), HTML_FORMAT)
     } catch (error) {
         console.warn(
             `[Stacks Plugin] Failed to render stack layout ${layoutPath}: ${error.message}`

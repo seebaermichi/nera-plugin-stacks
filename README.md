@@ -338,7 +338,10 @@ Michael Becker
   page frontmatter and uses no generator feature above the 4.x line. The
   `theme/` folder layout used in the paths above — what `nera new` scaffolds —
   needs v4.6.0+.
-- **Node.js**: >= 20.0.0
+- **Node.js**: >= 20.0.0. On Node 20 and on Node 22 before 22.22.2,
+  `npm install` prints `npm warn EBADENGINE` for `nopt` and `abbrev`, which
+  `js-beautify` 2 brings for its command-line tool; the plugin never uses them
+  and renders the same on every supported Node.
 - **Plugin Utils**: `^1.2.0` — used by the `npx nera-stacks` publish command
   (where `--force` landed), not by the plugin at build time. Publishing into
   `theme/views/vendor/` needs 1.5.0+, which a fresh install resolves.
